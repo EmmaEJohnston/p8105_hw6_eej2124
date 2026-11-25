@@ -1,0 +1,6 @@
+---
+title: "p8105_hw6_eej2124"
+author: "Emma"
+date: "2026-11-25"
+output: github_document
+---
