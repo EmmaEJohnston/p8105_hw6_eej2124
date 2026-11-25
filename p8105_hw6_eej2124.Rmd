@@ -12,6 +12,7 @@ library(tidyverse)
 
 # Problem 1 
 
+## Importing and tidying the data 
 ```{r}
 homicide_df = 
   read_csv("data/homicide-data.csv") |> 
@@ -29,24 +30,7 @@ homicide_df =
          )  
 ```
 
-```{r}
-baltimore_log_regression = 
-  homicide_df |> 
-  filter(city_state == "Baltimore, MD") |> 
-  glm(solved ~ victim_age + victim_sex + victim_race, data = _, family = binomial())
-```
-
-```{r}
-baltimore_log_regression |> 
-  broom::tidy(conf.int = TRUE) |> 
-  filter(term == "victim_sexMale") |> 
-  mutate(OR = exp(estimate), 
-         ci_l = exp(conf.low), 
-         ci_h = exp(conf.high)
-         ) |> 
-  select(term, OR, ci_l, ci_h)
-```
-
+## Writing a glm function 
 ```{r}
 city_glm = function(obs_city) {
   
@@ -66,8 +50,35 @@ city_glm = function(obs_city) {
 ```
 
 ```{r}
-city_glm("Baltimore, MD")
+city_glm("Baltimore, MD") |> 
+  knitr::kable(digits = 3)
 ```
 
+## Mapping across every city in the dataset 
 
+```{r}
+results_df = 
+  homicide_df |> 
+  distinct(city_state) |> 
+  mutate(results = map(city_state, city_glm)) |> 
+  unnest(results)
+```
+
+## Making a plot 
+
+```{r}
+results_df |> 
+  mutate(fct_reorder(city_state, OR)) |> 
+  ggplot(aes(x = city_state, y = OR)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = ci_l, ymax = ci_h)) +
+  coord_flip() +
+  labs(
+    x = "City",
+    y = "Adjusted OR (male vs. female victims)",
+    title = "Odds of solving homicides with male vs. female victims"
+  ) 
+```
+
+Cities with odds ratios of more than 1 mean that homicides with male victims are more likely to be solved. Cities with odds ratios of less than 1 mean that homicides with female victims are more likely to be solved. In most cities, homicides with female victims are more likely to be solved because the odds ratio is less than 1. Interestingly, cities with odds ratios higher than 1 often have larger confidence intervals. 
 
