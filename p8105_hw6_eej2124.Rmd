@@ -4,3 +4,70 @@ author: "Emma"
 date: "2026-11-25"
 output: github_document
 ---
+
+```{r}
+library(tidyverse)
+```
+
+
+# Problem 1 
+
+```{r}
+homicide_df = 
+  read_csv("data/homicide-data.csv") |> 
+  janitor::clean_names() |> 
+   mutate(
+    city_state = paste(city, state, sep = ", "), 
+    solved = as.numeric(disposition == "Closed by arrest"), 
+    victim_age = as.numeric(victim_age)
+  ) |> 
+  filter(city_state != "Dallas, TX", 
+         city_state != "Phoenix, AZ",
+         city_state != "Kansas City, MO", 
+         city_state != "Tulsa, AL", 
+         victim_race == "White" | victim_race == "Black"
+         )  
+```
+
+```{r}
+baltimore_log_regression = 
+  homicide_df |> 
+  filter(city_state == "Baltimore, MD") |> 
+  glm(solved ~ victim_age + victim_sex + victim_race, data = _, family = binomial())
+```
+
+```{r}
+baltimore_log_regression |> 
+  broom::tidy(conf.int = TRUE) |> 
+  filter(term == "victim_sexMale") |> 
+  mutate(OR = exp(estimate), 
+         ci_l = exp(conf.low), 
+         ci_h = exp(conf.high)
+         ) |> 
+  select(term, OR, ci_l, ci_h)
+```
+
+```{r}
+city_glm = function(obs_city) {
+  
+  homicide_df |> 
+    filter(city_state == obs_city) |> 
+    glm(solved ~ victim_age + victim_sex + victim_race, data = _, family = binomial()) |> 
+    broom::tidy(conf.int = TRUE) |> 
+    filter(term == "victim_sexMale") |> 
+    mutate(
+      OR = exp(estimate), 
+      ci_l = exp(conf.low), 
+      ci_h = exp(conf.high)
+      ) |> 
+    select(term, OR, ci_l, ci_h)
+
+}
+```
+
+```{r}
+city_glm("Baltimore, MD")
+```
+
+
+
