@@ -95,6 +95,30 @@ library(p8105.datasets)
 data("weather_df")
 ```
 
+```{r}
+weather_df |> 
+  lm(tmax ~ tmin + prcp, data = _)
+```
+
+```{r}
+draw_boot_sample = function(df) {
+  
+  sample_frac(df, replace = TRUE)
+  
+}
+```
+
+```{r}
+boot_strap_df = 
+  tibble(
+    strap_number = 1:5000
+  ) |> 
+  mutate(
+    strap_sample = map(strap_number, \(i) draw_boot_sample (weather_df))
+  ) 
+```
+
+FIx this
 
 # Problem 3 
 
